@@ -73,9 +73,23 @@ def get_lemmatized_sentences(text):
     return lemmatized_sentences
 
 
-def get_tfidf(documents_tokens, max_results=1000, threshold=0, save_as=None):
-    import math
+def tfidf(documents_tokens, max_results=1000, threshold=0):
+    documents_frequencies = [collections.Counter(_) for _ in documents_tokens]
+    df = pd.DataFrame(documents_frequencies)
+    length = len(df)
 
+    for col in df:
+        counts = df[col].count()
+        df[col] = df[col] * math.log(length / counts)
+
+    tfidf_weights = [row_object[row_object.values > threshold].sort_values(ascending=False).head(max_results).to_dict()
+                     for row, row_object in df.iterrows()]
+    [print(index, len(_), _) for index, _ in enumerate(tfidf_weights)]
+
+    return df, tfidf_weights
+
+
+def export_tfidf(documents_tokens, max_results=1000, threshold=0, save_as=None):
     documents_frequencies = [collections.Counter(_) for _ in documents_tokens]
     df = pd.DataFrame(documents_frequencies)
     length = len(df)
@@ -132,6 +146,6 @@ print(stopwords)
 documents_filtered = [[token for token in document if not token.lower() in stopwords] for document in documents_lemmas]
 print(documents_filtered)
 
-df, tfidf_weights = get_tfidf(documents_filtered, max_results=1000, threshold=0, save_as='relevant_terms_extraction.xlsx')
+df, tfidf_weights = export_tfidf(documents_filtered, max_results=1000, threshold=0, save_as='relevant_terms_extraction.xlsx')
 print(df)
 print(tfidf_weights)
